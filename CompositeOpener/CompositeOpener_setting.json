@@ -5,13 +5,19 @@
         "コンポ 2,コンポ /d{3}",
         "aaa,bbb,ccc",
         "",
-        ""
+        "",
+        "",
+        "最終,コンポ /d2,コンポC",
+        "aaa,bbb,ccc"
     ],
     "currentRadio": [
         false,
         false,
         false,
         false,
-        false
+        false,
+        false,
+        false,
+        true
     ]
 }
