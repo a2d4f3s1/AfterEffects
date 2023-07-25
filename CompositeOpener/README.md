@@ -1,16 +1,23 @@
 # Composite Opener
+タイムラインのコンポの表示非表示を一括で切り替えを行うツールです  
+jsonを利用し、管理を簡単にしています  
 
-リストjsonを使い、タイムラインのコンポの表示非表示を一括で切り替えます
-ttps://github.com/a2d4f3s1/AfterEffects/assets/49066959/bdc3f578-10d0-4e7b-8ee0-3375bd22b0ff
+リリース：
+https://github.com/a2d4f3s1/AfterEffects/releases/tag/CompositeOpener
 
+https://github.com/a2d4f3s1/AfterEffects/assets/49066959/7153d85f-414a-483e-9b06-b47307d47fbe
+
+---
 > 以下は「※ Read Me（Listファイルの書き方）.txt」との内容とほぼ同じです
+
 Read Me (23/07/19 update)  
+
 インストール  
 ■ CompositeOpener フォルダは「C:\Program Files\」は避けて配置して下さい(書き込みエラーになります)  
 ■ AEの[環境設定][スクリプトとエクスプレッション][スクリプトによるファイルへの書き込み]をONにして下さい  
 ■ ランチャー等を利用する場合「CompositeOpener_exe.jsx」のみそちらにコピーして下さい  
 
----------- ---------- ---------- ---------- ---------- ---------- 
+---
 1．「CompositeOpener_exe.jsx」について
  
 『CompositeOpener_exe.jsx』は「C:\Program Files\」のエラー回避用です  
@@ -18,7 +25,7 @@ Read Me (23/07/19 update)
 `var scriptFile = new File("/f/500_Github/AfterEffects_Private/CompositeOpener/21_edit/CompositeOpener.jsx");`  
 を転送先のパスに変更して下さい  
 
----------- ---------- ---------- ---------- ---------- ---------- 
+---
 2．「CompositeOpener_setting.json」について 
 
 「CompositeOpener_setting.json」にパスが書かれていますが…初期は動くはずです  
@@ -30,7 +37,7 @@ Read Me (23/07/19 update)
 誤：`"listPath": "F:\500_Github\AfterEffects_Private\CompositeOpener\21_edit\CoOpener_List.json",`  
 正：`"listPath": "F:\\500_Github\\AfterEffects_Private\\CompositeOpener\\21_edit\\CoOpener_List.json",`  
 
----------- ---------- ---------- ---------- ---------- ---------- 
+---
 3．「CoOpener_List.json」について 
 
 例：CoOpener_List.json
