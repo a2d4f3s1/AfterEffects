@@ -1,5 +1,5 @@
 {
-    "listPath": "CoOpener_List.json",
+    "listPath": "F:\\500_Github\\AfterEffects_Private\\CompositeOpener\\21_edit\\CompositeOpener\\CoOpener_List.json",
     "dropDownSettings": [
         "最終,コンポ /d2,コンポC",
         "コンポ 2,コンポ /d{3}",
@@ -8,7 +8,7 @@
         ""
     ],
     "currentRadio": [
-        true,
+        false,
         false,
         false,
         false,

@@ -5,6 +5,8 @@
         特定のコンポをタイムラインウィンドウで開いたり閉じたりする
         初期の実行時に同フォルダに[CompositeOpener_setting.json]，[CoOpener_List.json]が無いとエラる
     Versions :
+        v011 (23/07/19) 
+            リストの増減に対応、リストjsonに初期のリスト数を追加
         v010 (23/07/14) 
             'Program Files' 対応で 'CompositeOpener_exe.jsx' を作成、デバッグ初期値OFF、
             リストパスが切れてた時に本体パスを探す処理追加、small fix
@@ -16,7 +18,7 @@
 
 /*// モジュールスコープの変数 ----------
 */// ------------------------------
-var windowName = "Composite Opener v010" //名前
+var windowName = "Composite Opener v011" //名前
 debugLog("----- "+windowName+" -------------------------");
 
 // デバッグモード
@@ -31,7 +33,10 @@ var settings = readJsonFile(settingFilePath); // Read settings from json file
 var listFilePath = findValidFilePath(settings.listPath); // リストパスが切れてたら探し直し
 debugLog("listFilePath : "+listFilePath.toString());
 
-var lists = readJsonFile(listFilePath); // リスト
+var listJson = readJsonFile(listFilePath);  // JSON ファイル全体を読み込む
+var numOfRows = listJson.numOfRows;  // "numOfRows" を取り出す
+var lists = listJson.patterns;  // "patterns" を取り出す
+debugLog("lists : "+lists.toString());
 
 // "閉じる(C)" のメニューコマンドIDを取得
 var closeID = app.findMenuCommandId("閉じる(C)");
@@ -55,10 +60,10 @@ grp_listPath.orientation = "row";
 grp_listPath.margins = 3;
 grp_listPath.spacing = 5;
 // [UI>edittext] リストファイル名確認
-var listPathPanel = grp_listPath.add("panel",[0, 0, 120, 20]);
+var listPathPanel = grp_listPath.add("panel",[0, 0, 84, 24]);
 listPathPanel.margins = 0;
 listPathPanel.spacing = 0;
-var listPathText = listPathPanel.add('statictext', [0, 0, 120, 20], getFilenameWithoutExtension((new File(settings.listPath)).name));
+var listPathText = listPathPanel.add('statictext', [0, 0, 80, 20], getFilenameWithoutExtension((new File(settings.listPath)).name));
 // [UI>button] リストファイル名変更
 var listPathUpdateButton = grp_listPath.add('button', [0, -10, 22, 10], '...');
 // [UI>button] 設定保存
@@ -67,35 +72,40 @@ var saveSettingButton = grp_listPath.add("button", [00, 0, 28, 20], "Save");  //
 // [UI>group] ラジオボタンとドロップダウンリスト
 var grp_ChooseSetting = win.add("group", undefined);
 grp_ChooseSetting.orientation = "column";
-grp_ChooseSetting.margins = 3;
-grp_ChooseSetting.spacing = 5;
+grp_ChooseSetting.margins = 2;
+grp_ChooseSetting.spacing =3;
 // [UI>radioButtons],[dropDownLists]
 var radioButtons = [];
 var dropDownLists = [];
+// [UI>group] Buttons for adding and removing lines
+var grp_buttons = win.add("group", undefined);
+grp_buttons.orientation = "row";
+grp_buttons.margins = 2;
+grp_buttons.spacing = 8;
+var addButton = grp_buttons.add("button", [0, 0, 50, 16], "+");
+var removeButton = grp_buttons.add("button", [0, 0, 50, 16], "-");
+// Now create the initial lines based on the dropDownSettings count
+var initialLines = Math.max(5, settings.dropDownSettings.length); // Ensure we have at least 5 lines
 // [UI] Create the radio buttons and assign click handlers
-for (var i = 0; i < 5; i++) {
-    var group = grp_ChooseSetting.add("group", undefined);
-    group.orientation = "row";
-    group.spacing = 0;
-    radioButtons[i] = group.add("radiobutton", [0, 5, 20, 20], "");
-    dropDownLists[i] = group.add("dropdownlist", [0, 0, 120, 20], getListKeys());
+for (var i = 0; i < initialLines; i++) {
+    addLine();
 }
 
 // [UI>group] 実行
 var grp_run = win.add("group", undefined);
-grp_ChooseSetting.margins = 3;
-grp_ChooseSetting.spacing = 5;
+grp_run.margins = 0;
+grp_run.spacing = 0;
 // [UI>button] Run
-var runButton = grp_run.add("button", [0, 0, 86, 28], "Run");
+var runButton = grp_run.add("button", [0, 0, 72, 28], "Run");
 // [UI>group] runOption
 var grp_runOption = grp_run.add("group", undefined);
 grp_runOption.orientation = "column";
-grp_runOption.margins = 0;
+grp_runOption.margins = 3;
 grp_runOption.spacing = 0;
 // [UI>checkbox] Close Other
-var closeOtherButton = grp_runOption.add("checkbox", [0, 0, 72, 16], "Close Other");
+var closeOtherButton = grp_runOption.add("checkbox", [0, 0, 68, 16], "CloseOther");
 // [UI>checkbox] Inverse
-var inverseButton = grp_runOption.add("checkbox", [0, 0, 72, 16], "Inverse");
+var inverseButton = grp_runOption.add("checkbox", [0, 0, 68, 16], "Inverse");
 
 
 /*// 関数 ----------
@@ -215,6 +225,30 @@ function getRelativePath(file, base) {
     relativeParts = relativeParts.concat(fileParts);
 
     return relativeParts.join('/');
+}
+
+// UIリロード
+function redrawUI() {
+    win.layout.layout(true);  // Redraw the UI
+    listPathPanel.size.width = 80;  // Resize the listPathPanel after redrawing the UI
+}
+
+// ラジオボタン/DDリスト 追加
+function addLine() {
+    var i = radioButtons.length;
+    var group = grp_ChooseSetting.add("group", undefined);
+    group.orientation = "row";
+    group.spacing = 0;
+    radioButtons[i] = group.add("radiobutton", [0, 5, 20, 20], "");
+    dropDownLists[i] = group.add("dropdownlist", [0, 0, 120, 20], getListKeys());
+}
+// ラジオボタン/DDリスト 削除
+function removeLine() {
+    if (radioButtons.length > 0) {
+        grp_ChooseSetting.remove(radioButtons[radioButtons.length - 1].parent);
+        radioButtons.pop();
+        dropDownLists.pop();
+    }
 }
 
 //  コンポの表示を切り替える(コア処理)
@@ -349,23 +383,36 @@ saveSettingButton.onClick = function() {
 
 // Update dropdown lists in the button onClick
 listPathUpdateButton.onClick = function() {
-    var initialFolder = new Folder(listFilePath);
-    debugLog("initialFolder : "+initialFolder.toString());
-    var newFile = initialFolder.openDlg("Select a new list file");
+    listFilePath = findValidFilePath(settings.listPath); // リストパスが切れてたら探し直し
+    debugLog("listFilePath : "+listFilePath.toString());
+    var newFile = (File(listFilePath.path)).openDlg("Select a new list file");
+    
     if (newFile) {
         listPathText.text = getFilename(newFile.absoluteURI);  // Use the new function
         settings.listPath = newFile.fsName;  // Use absolute path
         listFilePath = newFile;  // Update listFilePath
-        lists = readJsonFile(newFile);  // Update the global lists object
+        
+        listJson = readJsonFile(newFile);  // Update the global listJson object
+        numOfRows = Math.max(5, listJson.numOfRows);  // Update numOfRows, ensuring it's not less than 5
+        lists = listJson.patterns;  // Update lists
         
         // newItems
         var newItems = getListKeys(lists);  // Pass the new list object
         debugLog("newItems.length : "+(newItems.length)); 
         
+        
         // Update dropdown lists
-        for (var i = 0; i < 5; i++) {
-            // items の更新
-            dropDownLists[i].removeAll(); // 初期化
+        while (dropDownLists.length > numOfRows) {
+            removeLine();  // remove excess lines
+            redrawUI(); // Redraw the UI
+        }
+        while (dropDownLists.length < numOfRows) {
+            addLine();  // add additional lines
+            redrawUI(); // Redraw the UI
+        }
+        for (var i = 0; i < numOfRows; i++) {
+            // Update items
+            dropDownLists[i].removeAll(); // Clear current items
             for (var j = 0; j < newItems.length; j++) {
                 dropDownLists[i].add('item', newItems[j]);  // Add new items
             }
@@ -391,6 +438,17 @@ for (var i = 0; i < radioButtons.length; i++) {
     };
 };
 
+// ライン追加ボタン
+addButton.onClick = function() {
+    addLine();
+    redrawUI(); // Redraw the UI
+}
+// ライン削除ボタン
+removeButton.onClick = function() {
+    removeLine();
+    redrawUI(); // Redraw the UI
+}
+
 // runButton
 runButton.onClick = function () {
     var selectedList;
@@ -410,7 +468,7 @@ runButton.onClick = function () {
         listFile.close(); // json 閉じる
         
         // "selectedList"の配列を読み込む
-        var compNames = listData[selectedList];
+        var compNames = listData.patterns[selectedList];
         
         showCompos(compNames, closeOtherButton.value, inverseButton.value);
         //
