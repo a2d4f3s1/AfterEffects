@@ -1,6 +1,9 @@
 # Composite Opener
-> 基本的に「※ Read Me（Listファイルの書き方）.txt」と同じです
 
+リストjsonを使い、タイムラインのコンポの表示非表示を一括で切り替えます
+ttps://github.com/a2d4f3s1/AfterEffects/assets/49066959/bdc3f578-10d0-4e7b-8ee0-3375bd22b0ff
+
+> 以下は「※ Read Me（Listファイルの書き方）.txt」との内容とほぼ同じです
 Read Me (23/07/19 update)  
 インストール  
 ■ CompositeOpener フォルダは「C:\Program Files\」は避けて配置して下さい(書き込みエラーになります)  
