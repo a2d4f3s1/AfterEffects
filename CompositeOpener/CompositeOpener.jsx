@@ -5,31 +5,33 @@
         特定のコンポをタイムラインウィンドウで開いたり閉じたりする
         初期の実行時に同フォルダに[CompositeOpener_setting.json]，[CoOpener_List.json]が無いとエラる
     Versions :
-        v009 (23/07/18) 
+        v010 (23/07/14) 
+            'Program Files' 対応で 'CompositeOpener_exe.jsx' を作成、デバッグ初期値OFF、
+            リストパスが切れてた時に本体パスを探す処理追加、small fix
+        v009 (23/07/13) 
             small fix、ワイルドカードと数字(d{2})対応、デバッグモードの実装、jsonエラーの対応
-        v000-008 (23/07/18) 
+        v000-008 (23/07/13) 
             Initial Release
 */// ---------- ---------- ----------
 
 /*// モジュールスコープの変数 ----------
 */// ------------------------------
-debugLog("------------------------------");
-var windowName = "Composite Opener v009" //名前
+var windowName = "Composite Opener v010" //名前
+debugLog("----- "+windowName+" -------------------------");
 
 // デバッグモード
-var isDebugMode = true;
+var isDebugMode = false;
 
 // JSONファイルへのパスを取得
 var scriptFile = new File($.fileName);
 var scriptPath = scriptFile.path;
 var settingFilePath = File(scriptPath + "/CompositeOpener_setting.json");
 debugLog("settingFilePath : "+settingFilePath.toString());
-
 var settings = readJsonFile(settingFilePath); // Read settings from json file
-var listFilePath = new File(settings.listPath); // Set the list file path from settings
+var listFilePath = findValidFilePath(settings.listPath); // リストパスが切れてたら探し直し
 debugLog("listFilePath : "+listFilePath.toString());
 
-var lists = readJsonFile(listFilePath);
+var lists = readJsonFile(listFilePath); // リスト
 
 // "閉じる(C)" のメニューコマンドIDを取得
 var closeID = app.findMenuCommandId("閉じる(C)");
@@ -102,13 +104,39 @@ var inverseButton = grp_runOption.add("checkbox", [0, 0, 72, 16], "Inverse");
 // デバッグログを出力
 function debugLog(message) {
     if (isDebugMode) {
-        $.writeln(message);
+        $.writeln(decodeURI(message));
     }
 }
 
 // 「ワイルドカード(".","*")」または「数字(\d)」を含むかどうかをチェック
 function containsWildcardOrDigit(str) {
     return /[\.\*]|\\d/.test(str);
+}
+
+// 与えられたパスのリストを順に試し、最初に見つかった存在するファイルのパスを返す
+function findValidFilePath(initialPath) {
+    var initialFilePath = new File(initialPath);
+
+    if (initialFilePath.exists) {
+        debugLog("return initialFilePath");
+        return initialFilePath;
+    } else {
+        // ファイル名のみ抽出
+        var fileName = initialFilePath.name; 
+
+        // 新しいパスを構築
+        var newPath = scriptPath + "/" + fileName;
+        var newFilePath = new File(newPath);
+        
+        if (newFilePath.exists) {
+            debugLog("return newFilePath");
+            return newFilePath;
+        } else {
+            // 初期値を返す
+            debugLog("return defaultPath");
+            return (new File(scriptPath + "/CoOpener_List.json"));
+        }
+    }
 }
 
 //ファイル名の中で最後に現れる"."（ピリオド）の位置を見つけ、その位置までの部分文字列を返す
@@ -305,15 +333,14 @@ win.show();
 saveSettingButton.onClick = function() {
     // Update settings based on current state
     settings.listPath = settings.listPath;
-
+     // ラジオボタンの設定
     settings.currentRadio = radioButtons.map(function(button) {
         return button.value;
     });
-
+     // ドロップダウンリストの設定
     settings.dropDownSettings = dropDownLists.map(function(list, index) {
         return list.selection ? list.selection.text : "";
     });
-
     // Save JSON string to a file
     var jsonString = JSON.stringify(settings, null, 4); // Convert settings object to JSON string // Use 4 spaces for indentation
     var filePath = (scriptPath + "/CompositeOpener_setting.json");
@@ -322,7 +349,9 @@ saveSettingButton.onClick = function() {
 
 // Update dropdown lists in the button onClick
 listPathUpdateButton.onClick = function() {
-    var newFile = File.openDialog("Select a new list file");
+    var initialFolder = new Folder(listFilePath);
+    debugLog("initialFolder : "+initialFolder.toString());
+    var newFile = initialFolder.openDlg("Select a new list file");
     if (newFile) {
         listPathText.text = getFilename(newFile.absoluteURI);  // Use the new function
         settings.listPath = newFile.fsName;  // Use absolute path
